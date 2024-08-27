@@ -27,7 +27,7 @@ class _WebViewAppState extends State<WebViewApp> {
         title: const Text('Free Ukraine'),
       ),
       body: const WebView(
-        initialUrl: 'https://www.theguardian.com/world/ukraine',
+        initialUrl: 'https://snaplist.one',
       ),
     );
   }

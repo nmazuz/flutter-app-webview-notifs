@@ -19,7 +19,7 @@ class _WebViewStackState extends State<WebViewStack> {
     return Stack(
       children: [
         WebView(
-          initialUrl: 'https://www.theguardian.com/world/ukraine',
+          initialUrl: 'https://snaplist.one',
           
           javascriptMode: JavascriptMode.unrestricted,
 
