@@ -98,23 +98,31 @@ class _WebViewAppState extends State<WebViewApp> {
   void dispose() {
     _bannerAd?.dispose();
     _interstitialAd?.dispose();
+    _refreshController.dispose(); // Dispose of the RefreshController
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        actions: [
-          NavigationControls(controller: controller),
-        ],
-      ),
       body: Column(
         children: [
+          // Empty space with background color #198754
+          Container(
+            color: Color(0xFF198754), // Set the background color here
+            height: kToolbarHeight, // Typically 56.0 pixels
+          ),
           Expanded(
             child: SmartRefresher(
               controller: _refreshController,
               onRefresh: _onRefresh,
+              header: ClassicHeader(
+                height: 60.0, // Set height to shorten the pull distance
+                releaseText: 'Release to refresh',
+                refreshingText: 'Refreshing...',
+                completeText: 'Refresh complete',
+                failedText: 'Refresh failed',
+              ),
               child: WebViewStack(
                 controller: controller,
                 onUrlChange: (String url) {
@@ -127,9 +135,14 @@ class _WebViewAppState extends State<WebViewApp> {
             ),
           ),
           if (_bannerAd != null)
-            Container(
-              height: 75,
-              child: AdWidget(ad: _bannerAd!),
+            Positioned(
+              bottom: 0,
+              left: 0,
+              right: 0,
+              child: Container(
+                height: 75,
+                child: AdWidget(ad: _bannerAd!),
+              ),
             ),
         ],
       ),
