@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:webview_flutter/webview_flutter.dart';
+import 'package:pull_to_refresh/pull_to_refresh.dart'; // Import the package
 
 import 'package:fapp_shell/navigation_controls.dart';
 import 'package:fapp_shell/webview_stack.dart';
@@ -27,9 +28,10 @@ class WebViewApp extends StatefulWidget {
 }
 
 class _WebViewAppState extends State<WebViewApp> {
-  final controller = Completer<WebViewController>();
+  final Completer<WebViewController> controller = Completer<WebViewController>();
   BannerAd? _bannerAd;
   InterstitialAd? _interstitialAd;
+  final RefreshController _refreshController = RefreshController(initialRefresh: false);
 
   @override
   void initState() {
@@ -86,6 +88,12 @@ class _WebViewAppState extends State<WebViewApp> {
     }
   }
 
+  void _onRefresh() async {
+    final WebViewController webViewController = await controller.future;
+    webViewController.reload();
+    _refreshController.refreshCompleted();
+  }
+
   @override
   void dispose() {
     _bannerAd?.dispose();
@@ -93,7 +101,7 @@ class _WebViewAppState extends State<WebViewApp> {
     super.dispose();
   }
 
- @override
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
@@ -104,14 +112,18 @@ class _WebViewAppState extends State<WebViewApp> {
       body: Column(
         children: [
           Expanded(
-            child: WebViewStack(
-              controller: controller,
-              onUrlChange: (String url) {
-                print(url);
-                if (url.startsWith(appDomain)) {
-                  _showInterstitialAd();
-                }
-              },
+            child: SmartRefresher(
+              controller: _refreshController,
+              onRefresh: _onRefresh,
+              child: WebViewStack(
+                controller: controller,
+                onUrlChange: (String url) {
+                  print(url);
+                  if (url.startsWith(appDomain)) {
+                    _showInterstitialAd();
+                  }
+                },
+              ),
             ),
           ),
           if (_bannerAd != null)
