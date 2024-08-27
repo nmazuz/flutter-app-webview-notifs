@@ -6,7 +6,12 @@ import 'package:webview_flutter/webview_flutter.dart';
 import 'package:fapp_shell/navigation_controls.dart';
 import 'package:fapp_shell/webview_stack.dart';
 
+import 'package:google_mobile_ads/google_mobile_ads.dart';
+import 'constants.dart';
+
 void main() {
+  WidgetsFlutterBinding.ensureInitialized();
+  MobileAds.instance.initialize();
   runApp(
     const MaterialApp(
       home: WebViewApp(),
@@ -23,19 +28,99 @@ class WebViewApp extends StatefulWidget {
 
 class _WebViewAppState extends State<WebViewApp> {
   final controller = Completer<WebViewController>();
+  BannerAd? _bannerAd;
+  InterstitialAd? _interstitialAd;
 
   @override
+  void initState() {
+    super.initState();
+    _loadBannerAd();
+    _loadInterstitialAd();
+  }
+
+  void _loadBannerAd() {
+    _bannerAd = BannerAd(
+      adUnitId: 'ca-app-pub-3940256099942544/6300978111', // Replace with your ad unit ID
+      size: AdSize.banner,
+      request: AdRequest(),
+      listener: BannerAdListener(
+        onAdLoaded: (_) {
+          setState(() {});
+        },
+        onAdFailedToLoad: (ad, error) {
+          ad.dispose();
+        },
+      ),
+    );
+    _bannerAd?.load();
+  }
+
+  void _loadInterstitialAd() {
+    InterstitialAd.load(
+      adUnitId: 'ca-app-pub-3940256099942544/1033173712', // Replace with your ad unit ID
+      request: AdRequest(),
+      adLoadCallback: InterstitialAdLoadCallback(
+        onAdLoaded: (ad) {
+          _interstitialAd = ad;
+        },
+        onAdFailedToLoad: (error) {
+          print('InterstitialAd failed to load: $error');
+        },
+      ),
+    );
+  }
+
+  void _showInterstitialAd() {
+    if (_interstitialAd != null) {
+      _interstitialAd!.fullScreenContentCallback = FullScreenContentCallback(
+        onAdDismissedFullScreenContent: (ad) {
+          ad.dispose();
+          _loadInterstitialAd();
+        },
+        onAdFailedToShowFullScreenContent: (ad, error) {
+          ad.dispose();
+          _loadInterstitialAd();
+        },
+      );
+      _interstitialAd!.show();
+    }
+  }
+
+  @override
+  void dispose() {
+    _bannerAd?.dispose();
+    _interstitialAd?.dispose();
+    super.dispose();
+  }
+
+ @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Flutter WebView'),
-        // Add from here ...
         actions: [
           NavigationControls(controller: controller),
         ],
-        // ... to here.
       ),
-      body: WebViewStack(controller: controller),
+      body: Column(
+        children: [
+          Expanded(
+            child: WebViewStack(
+              controller: controller,
+              onUrlChange: (String url) {
+                print(url);
+                if (url.startsWith(appDomain)) {
+                  _showInterstitialAd();
+                }
+              },
+            ),
+          ),
+          if (_bannerAd != null)
+            Container(
+              height: 75,
+              child: AdWidget(ad: _bannerAd!),
+            ),
+        ],
+      ),
     );
   }
 }
